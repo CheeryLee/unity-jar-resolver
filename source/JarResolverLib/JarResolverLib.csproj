@@ -7,7 +7,7 @@
     <OutputType>Library</OutputType>
     <RootNamespace>JarResolverLib</RootNamespace>
     <AssemblyName>JarResolverLib</AssemblyName>
-    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <ReleaseVersion>1.2</ReleaseVersion>
     <ProductVersion>12.0.0</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
