@@ -213,21 +213,32 @@ namespace GooglePlayServices
                     stream.BeginRead(
                         buffer, 0, buffer.Length, (asyncResult) => {
                             int bytesRead = stream.EndRead(asyncResult);
-                            if (!complete)
-                            {
-                                complete = bytesRead == 0;
-                                if (DataReceived != null)
-                                {
-                                    byte[] copy = new byte[bytesRead];
-                                    Array.Copy(buffer, copy, copy.Length);
-                                    DataReceived(new StreamData(
-                                        handle, Encoding.UTF8.GetString(copy), copy,
-                                        complete));
-                                }
-                            }
+                            BytesReadCallback(bytesRead);
                             readEvent.Set();
                         }, null);
-                    readEvent.WaitOne();
+                    var waitResult = readEvent.WaitOne(10000);
+
+                    if (!waitResult)
+                    {
+                        UnityEngine.Debug.Log($"Timeout of {nameof(AsyncStreamReader)} waiting");
+                        BytesReadCallback(0);
+                    }
+                }
+
+                void BytesReadCallback(int bytesRead)
+                {
+                    if (complete)
+                        return;
+                    
+                    complete = bytesRead == 0;
+                    if (DataReceived == null)
+                        return;
+                    
+                    byte[] copy = new byte[bytesRead];
+                    Array.Copy(buffer, copy, copy.Length);
+                    DataReceived(new StreamData(
+                        handle, Encoding.UTF8.GetString(copy), copy,
+                        complete));
                 }
             }
 
