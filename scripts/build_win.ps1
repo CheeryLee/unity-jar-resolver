@@ -22,6 +22,10 @@ function Build {
         Remove-Item $_.FullName -Force -Recurse
     }
 
+    if (-not (Test-Path $OutputPath)) {
+        New-Item $OutputPath -ItemType Directory
+    }
+
     # clean build folder
     Get-ChildItem $OutputPath | ForEach-Object {
         Remove-Item $_.FullName -Force
