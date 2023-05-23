@@ -39,6 +39,9 @@ namespace GooglePlayServices {
             internal bool patchAndroidManifest;
             internal bool patchMainTemplateGradle;
             internal bool patchPropertiesTemplateGradle;
+            internal bool patchSettingsTemplateGradle;
+            internal bool useFullCustomMavenRepoPathWhenExport;
+            internal bool useFullCustomMavenRepoPathWhenNotExport;
             internal string localMavenRepoDir;
             internal bool useJetifier;
             internal bool verboseLogging;
@@ -60,6 +63,9 @@ namespace GooglePlayServices {
                 patchAndroidManifest = SettingsDialog.PatchAndroidManifest;
                 patchMainTemplateGradle = SettingsDialog.PatchMainTemplateGradle;
                 patchPropertiesTemplateGradle = SettingsDialog.PatchPropertiesTemplateGradle;
+                patchSettingsTemplateGradle = SettingsDialog.PatchSettingsTemplateGradle;
+                useFullCustomMavenRepoPathWhenExport = SettingsDialog.UseFullCustomMavenRepoPathWhenExport;
+                useFullCustomMavenRepoPathWhenNotExport = SettingsDialog.UseFullCustomMavenRepoPathWhenNotExport;
                 localMavenRepoDir = SettingsDialog.LocalMavenRepoDir;
                 useJetifier = SettingsDialog.UseJetifier;
                 verboseLogging = SettingsDialog.VerboseLogging;
@@ -82,6 +88,9 @@ namespace GooglePlayServices {
                 SettingsDialog.PatchAndroidManifest = patchAndroidManifest;
                 SettingsDialog.PatchMainTemplateGradle = patchMainTemplateGradle;
                 SettingsDialog.PatchPropertiesTemplateGradle = patchPropertiesTemplateGradle;
+                SettingsDialog.PatchSettingsTemplateGradle = patchSettingsTemplateGradle;
+                SettingsDialog.UseFullCustomMavenRepoPathWhenExport = useFullCustomMavenRepoPathWhenExport;
+                SettingsDialog.UseFullCustomMavenRepoPathWhenNotExport = useFullCustomMavenRepoPathWhenNotExport;
                 SettingsDialog.LocalMavenRepoDir = localMavenRepoDir;
                 SettingsDialog.UseJetifier = useJetifier;
                 SettingsDialog.VerboseLogging = verboseLogging;
@@ -101,6 +110,9 @@ namespace GooglePlayServices {
         private const string PatchAndroidManifestKey = Namespace + "PatchAndroidManifest";
         private const string PatchMainTemplateGradleKey = Namespace + "PatchMainTemplateGradle";
         private const string PatchPropertiesTemplateGradleKey = Namespace + "PatchPropertiesTemplateGradle";
+        private const string PatchSettingsTemplateGradleKey = Namespace + "PatchSettingsTemplateGradle";
+        private const string UseFullCustomMavenRepoPathWhenExportKey = Namespace + "UseFullCustomMavenRepoPathWhenExport";
+        private const string UseFullCustomMavenRepoPathWhenNotExportKey = Namespace + "UseFullCustomMavenRepoPathWhenNotExport";
         private const string LocalMavenRepoDirKey = Namespace + "LocalMavenRepoDir";
         private const string UseJetifierKey = Namespace + "UseJetifier";
         private const string VerboseLoggingKey = Namespace + "VerboseLogging";
@@ -120,6 +132,9 @@ namespace GooglePlayServices {
             PatchAndroidManifestKey,
             PatchMainTemplateGradleKey,
             PatchPropertiesTemplateGradleKey,
+            PatchSettingsTemplateGradleKey,
+            UseFullCustomMavenRepoPathWhenExportKey,
+            UseFullCustomMavenRepoPathWhenNotExportKey,
             LocalMavenRepoDirKey,
             UseJetifierKey,
             VerboseLoggingKey,
@@ -245,6 +260,21 @@ namespace GooglePlayServices {
             get { return projectSettings.GetBool(PatchPropertiesTemplateGradleKey, true); }
         }
 
+        internal static bool PatchSettingsTemplateGradle {
+            set { projectSettings.SetBool(PatchSettingsTemplateGradleKey, value); }
+            get { return projectSettings.GetBool(PatchSettingsTemplateGradleKey, true); }
+        }
+
+        internal static bool UseFullCustomMavenRepoPathWhenExport {
+            set { projectSettings.SetBool(UseFullCustomMavenRepoPathWhenExportKey, value); }
+            get { return projectSettings.GetBool(UseFullCustomMavenRepoPathWhenExportKey, true); }
+        }
+
+        internal static bool UseFullCustomMavenRepoPathWhenNotExport {
+            set { projectSettings.SetBool(UseFullCustomMavenRepoPathWhenNotExportKey, value); }
+            get { return projectSettings.GetBool(UseFullCustomMavenRepoPathWhenNotExportKey, false); }
+        }
+
         internal static string LocalMavenRepoDir {
             private set { projectSettings.SetString(LocalMavenRepoDirKey, value); }
             get {
@@ -255,7 +285,7 @@ namespace GooglePlayServices {
 
         internal static bool UseJetifier {
             set { projectSettings.SetBool(UseJetifierKey, value); }
-            get { return projectSettings.GetBool(UseJetifierKey, false); }
+            get { return projectSettings.GetBool(UseJetifierKey, true); }
         }
 
         internal static bool VerboseLogging {
@@ -337,6 +367,8 @@ namespace GooglePlayServices {
         /// Called when the GUI should be rendered.
         /// </summary>
         public void OnGUI() {
+            GUI.skin.label.wordWrap = true;
+
             GUILayout.BeginVertical();
             GUILayout.Label(String.Format("Android Resolver (version {0}.{1}.{2})",
                                           AndroidResolverVersionNumber.Value.Major,
@@ -410,8 +442,8 @@ namespace GooglePlayServices {
                                 "AndroidManifest.xml or a single target ABI is selected " +
                                 "without a compatible build system.");
             } else {
-                GUILayout.Label("AAR explosion will be disabled in exported Gradle builds " +
-                                "(Unity 5.5 and above). You will need to set " +
+                GUILayout.Label("AAR explosion will be disabled." +
+                                "You may need to set " +
                                 "android.defaultConfig.applicationId to your bundle ID in your " +
                                 "build.gradle to generate a functional APK.");
             }
@@ -459,6 +491,23 @@ namespace GooglePlayServices {
             }
 
             GUILayout.BeginHorizontal();
+            GUILayout.Label("Use Jetifier.", EditorStyles.boldLabel);
+            settings.useJetifier = EditorGUILayout.Toggle(settings.useJetifier);
+            GUILayout.EndHorizontal();
+            if (settings.useJetifier) {
+                GUILayout.Label(
+                    "Legacy Android support libraries and references to them from other " +
+                    "libraries will be rewritten to use Jetpack using the Jetifier tool. " +
+                    "Enabling option allows an application to use Android Jetpack " +
+                    "when other libraries in the project use the Android support libraries.");
+            } else {
+                GUILayout.Label(
+                    "Class References to legacy Android support libraries (pre-Jetpack) will be " +
+                    "left unmodified in the project. This will possibly result in broken Android " +
+                    "builds when mixing legacy Android support libraries and Jetpack libraries.");
+            }
+
+            GUILayout.BeginHorizontal();
             GUILayout.Label("Patch mainTemplate.gradle", EditorStyles.boldLabel);
             settings.patchMainTemplateGradle =
                 EditorGUILayout.Toggle(settings.patchMainTemplateGradle);
@@ -477,6 +526,44 @@ namespace GooglePlayServices {
             }
 
             if (settings.patchMainTemplateGradle) {
+                GUILayout.Label("Use Full Custom Local Maven Repo Path", EditorStyles.boldLabel);
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("  When building Android app through Unity", EditorStyles.boldLabel);
+                settings.useFullCustomMavenRepoPathWhenNotExport =
+                    EditorGUILayout.Toggle(settings.useFullCustomMavenRepoPathWhenNotExport);
+                GUILayout.EndHorizontal();
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("  When exporting Android project", EditorStyles.boldLabel);
+                settings.useFullCustomMavenRepoPathWhenExport =
+                    EditorGUILayout.Toggle(settings.useFullCustomMavenRepoPathWhenExport);
+                GUILayout.EndHorizontal();
+
+                GUILayout.Label(
+                    "EDM4U can inject custom local Maven repo to Gradle template files " +
+                    "differnetly depending on whether 'Export Project' in Build Settings is " +
+                    "enabled or not.\n" +
+                    "If checked, custom local Maven repo path will look like the following. " +
+                    "This is best if the Unity project is always under the same path, or when " +
+                    "Unity editor has bugs which fail to resolve template variables like " +
+                    "'**DIR_UNITYPROJECT**'");
+                GUILayout.Box(
+                    "  maven {\n" +
+                    "    url \"file:////path/to/myUnityProject/path/to/m2repository\"\n" +
+                    "  }", EditorStyles.wordWrappedMiniLabel);
+                GUILayout.Label(
+                    "If unchecked, custom local Maven repo path will look like the following. " +
+                    "This is best if the Unity projects locates in different folders on " +
+                    "different workstations. 'unityProjectPath' will be resolved at build time " +
+                    "using template variables like '**DIR_UNITYPROJECT**'");
+                GUILayout.Box(
+                    "  def unityProjectPath = $/file:///**DIR_UNITYPROJECT**/$.replace(\"\\\", \"/\")\n" +
+                    "  maven {\n" +
+                    "    url (unityProjectPath + \"/path/to/m2repository\")\n" +
+                    "  }", EditorStyles.wordWrappedMiniLabel);
+                GUILayout.Label(
+                    "Note that EDM4U always uses full path if the custom local Maven repo is NOT " +
+                    "under Unity project folder.");
+
                 GUILayout.BeginHorizontal();
                 string previousDir = settings.localMavenRepoDir;
                 GUILayout.Label("Local Maven Repo Directory", EditorStyles.boldLabel);
@@ -502,23 +589,6 @@ namespace GooglePlayServices {
                                 settings.localMavenRepoDir)));
             }
 
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("Use Jetifier.", EditorStyles.boldLabel);
-            settings.useJetifier = EditorGUILayout.Toggle(settings.useJetifier);
-            GUILayout.EndHorizontal();
-            if (settings.useJetifier) {
-                GUILayout.Label(
-                    "Legacy Android support libraries and references to them from other " +
-                    "libraries will be rewritten to use Jetpack using the Jetifier tool. " +
-                    "Enabling option allows an application to use Android Jetpack " +
-                    "when other libraries in the project use the Android support libraries.");
-            } else {
-                GUILayout.Label(
-                    "Class References to legacy Android support libraries (pre-Jetpack) will be " +
-                    "left unmodified in the project. This will possibly result in broken Android " +
-                    "builds when mixing legacy Android support libraries and Jetpack libraries.");
-            }
-
             if (settings.useJetifier) {
                 GUILayout.BeginHorizontal();
                 GUILayout.Label("Patch gradleTemplate.properties", EditorStyles.boldLabel);
@@ -531,6 +601,18 @@ namespace GooglePlayServices {
                     "Settings for Android > Publishing Settings' menu item. " +
                     "This has no effect in older versions of Unity.");
             }
+
+            if (settings.patchMainTemplateGradle) {
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("Copy and patch settingsTemplate.gradle from 2022.2", EditorStyles.boldLabel);
+                settings.patchSettingsTemplateGradle = EditorGUILayout.Toggle(settings.patchSettingsTemplateGradle);
+                GUILayout.EndHorizontal();
+                GUILayout.Label(
+                    "For Unity 2022.2 and above, any additional Maven repositories should be " +
+                    "specified in settingsTemplate.gradle. If checked, EDM4U will also copy " +
+                    "settingsTemplate.gradle from Unity engine folder.");
+            }
+
             settings.analyticsSettings.RenderGui();
 
             GUILayout.BeginHorizontal();
@@ -543,6 +625,10 @@ namespace GooglePlayServices {
             settings.useProjectSettings = EditorGUILayout.Toggle(settings.useProjectSettings);
             GUILayout.EndHorizontal();
 
+            GUILayout.EndVertical();
+            EditorGUILayout.EndScrollView();
+
+            GUILayout.BeginVertical();
             GUILayout.Space(10);
 
             if (GUILayout.Button("Reset to Defaults")) {
@@ -582,6 +668,12 @@ namespace GooglePlayServices {
                             "patchAndroidManifest",
                             SettingsDialog.PatchAndroidManifest.ToString()),
                         new KeyValuePair<string, string>(
+                            "UseFullCustomMavenRepoPathWhenNotExport",
+                            SettingsDialog.UseFullCustomMavenRepoPathWhenNotExport.ToString()),
+                        new KeyValuePair<string, string>(
+                            "UseFullCustomMavenRepoPathWhenExport",
+                            SettingsDialog.UseFullCustomMavenRepoPathWhenExport.ToString()),
+                        new KeyValuePair<string, string>(
                             "localMavenRepoDir",
                             SettingsDialog.LocalMavenRepoDir.ToString()),
                         new KeyValuePair<string, string>(
@@ -596,6 +688,16 @@ namespace GooglePlayServices {
                         new KeyValuePair<string, string>(
                             "promptBeforeAutoResolution",
                             SettingsDialog.PromptBeforeAutoResolution.ToString()),
+                        new KeyValuePair<string, string>(
+                            "patchMainTemplateGradle",
+                            SettingsDialog.PatchMainTemplateGradle.ToString()),
+                        new KeyValuePair<string, string>(
+                            "patchPropertiesTemplateGradle",
+                            SettingsDialog.PatchPropertiesTemplateGradle.ToString()),
+                        new KeyValuePair<string, string>(
+                            "patchSettingsTemplateGradle",
+                            SettingsDialog.PatchSettingsTemplateGradle.ToString()),
+
                     },
                     "Settings Save");
 
@@ -604,9 +706,8 @@ namespace GooglePlayServices {
             }
             if (closeWindow) Close();
             GUILayout.EndHorizontal();
-
             GUILayout.EndVertical();
-            EditorGUILayout.EndScrollView();
+
             GUILayout.EndVertical();
         }
     }
