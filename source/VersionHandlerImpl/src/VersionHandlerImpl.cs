@@ -2290,7 +2290,7 @@ public class VersionHandlerImpl : AssetPostprocessor {
     /// Load log preferences.
     /// </summary>
     private static void LoadLogPreferences() {
-        VerboseLoggingEnabled = VerboseLoggingEnabled;
+        UpdateLoggerLevel(VerboseLoggingEnabled);
     }
 
     /// <summary>
@@ -2512,8 +2512,12 @@ public class VersionHandlerImpl : AssetPostprocessor {
                                       defaultValue: false); }
         set {
             settings.SetBool(PREFERENCE_VERBOSE_LOGGING_ENABLED, value);
-            logger.Level = value ? LogLevel.Verbose : LogLevel.Info;
+            UpdateLoggerLevel(value);
         }
+    }
+    
+    private static void UpdateLoggerLevel(bool verboseLoggingEnabled) {
+        logger.Level = verboseLoggingEnabled ? LogLevel.Verbose : LogLevel.Info;
     }
 
     /// <summary>
@@ -2722,7 +2726,7 @@ public class VersionHandlerImpl : AssetPostprocessor {
         }
         var assetGuids = searchDirectories == null ? AssetDatabase.FindAssets(assetsFilter) :
             AssetDatabase.FindAssets(assetsFilter, searchDirectories);
-        foreach (string assetGuid in assetGuids) {
+        foreach (var assetGuid in assetGuids) {
             string filename = AssetDatabase.GUIDToAssetPath(assetGuid);
             // Ignore non-existent files as it's possible for the asset database to reference
             // missing files if it hasn't been refreshed or completed a refresh.

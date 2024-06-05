@@ -118,6 +118,12 @@ public class VersionHandler {
         } else {
             EditorApplication.update -= BootStrap;
             EditorApplication.update += BootStrap;
+            // A workaround to make sure bootstrap continues if Unity reloads assemblies
+            // during bootstrapping. The issue only observed in Unity 2019 and 2020
+            float unityVersion = GetUnityVersionMajorMinor();
+            if (unityVersion < 2021.0f && unityVersion >= 2019.0f) {
+              var type = BootStrappedImpl;
+            }
         }
     }
 
@@ -147,7 +153,7 @@ public class VersionHandler {
         if (implAvailable) return;
 
         var assemblies = new List<Match>();
-        foreach (string assetGuid in AssetDatabase.FindAssets("l:gvh")) {
+        foreach (var assetGuid in AssetDatabase.FindAssets("l:gvh")) {
             string filename = AssetDatabase.GUIDToAssetPath(assetGuid);
             var match = VERSION_HANDLER_FILENAME_RE.Match(filename);
             if (match.Success) assemblies.Add(match);
