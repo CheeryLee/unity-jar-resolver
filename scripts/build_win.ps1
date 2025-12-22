@@ -1,14 +1,14 @@
-[string] $global:MsBuildPath = ""
+[string] $global:DotnetPath = ""
 [string] $global:UnityPath = ""
 [string] $global:Configuration = "Release"
 [bool] $global:KeepAll = $false
 
 function Build {
-    [string] $MsBuildExe = $global:MsBuildPath + "\MSBuild.exe"
+    [string] $DotnetExe = $global:DotnetPath + "\dotnet.exe"
     [string] $OutputPath = "$PSScriptRoot\..\output"
 
-    if ($global:MsBuildPath -eq "" -or -not (Test-Path -Path $MsBuildExe -PathType Leaf)) {
-        PrintError -Message ("MSBuild executable wasn't found at this path: " + $global:MsBuildPath)
+    if ($global:DotnetPath -eq "" -or -not (Test-Path -Path $DotnetExe -PathType Leaf)) {
+        PrintError -Message ("Dotnet executable wasn't found at this path: " + $global:DotnetPath)
         exit
     }
 
@@ -31,18 +31,17 @@ function Build {
         Remove-Item $_.FullName -Force
     }
 
-    PrintLog -Message ("MsBuildPath: " + $global:MsBuildPath)
+    PrintLog -Message ("DotnetPath: " + $global:DotnetPath)
     PrintLog -Message ("UnityPath: " + $global:UnityPath)
     PrintLog -Message ("Configuration: " + $global:Configuration)
 
-    [string[]] $ProcArgs = "-property:UnityHintPath=`"$UnityPath\Editor\Data\Managed`"",
-        "-property:UnityIosPath=`"$UnityPath\Editor\Data\PlaybackEngines\iOSSupport`"" ,
-        "-property:OutputPath=`"$OutputPath`"",
-        "-property:Configuration=$Configuration",
-        "-m",
-        "`"$PSScriptRoot\..\source`""
+    [string[]] $ProcArgs = "-p:UnityHintPath=`"$UnityPath\Editor\Data\Managed`"",
+        "-p:UnityIosPath=`"$UnityPath\Editor\Data\PlaybackEngines\iOSSupport`"" ,
+        "-p:OutputPath=`"$OutputPath`"",
+        "-p:Configuration=$Configuration",,
+        "`"$PSScriptRoot\..\source\ExternalDependencyManager.sln`""
     
-    & $MsBuildExe $ProcArgs
+    & $DotnetExe build $ProcArgs
 
     if ($global:KeepAll -ne $true) {
         Get-ChildItem $OutputPath | Where-Object {
@@ -67,9 +66,9 @@ function ParseArguments {
         [string[]] $ArgPairSplit = $ArgPair.Split("=")
 
         switch ($ArgPairSplit[0]) {
-            "-msBuildPath"
+            "-dotnetPath"
             {
-                $global:MsBuildPath = $ArgPairSplit[1].Replace("`"", "")
+                $global:DotnetPath = $ArgPairSplit[1].Replace("`"", "")
 
             }
             "-unityPath"
@@ -101,7 +100,7 @@ function ParseArguments {
 function PrintHelp {
     PrintLog -Message "EDM4U build script for Windows
     Arguments:
-        -msBuildPath=<path>             - path to MSBuild executable
+        -dotnetPath=<path>              - path to dotnet executable
         -unityPath=<path>               - path to Unity installation
         -configuration=<Debug|Release>  - build configuration
         -keepAll                        - keep all assemblies after build

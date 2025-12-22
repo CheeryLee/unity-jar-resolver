@@ -10,7 +10,7 @@
     <RootNamespace>Google</RootNamespace>
     <AssemblyName>Google.AndroidResolverIntegrationTests</AssemblyName>
     <ReleaseVersion>1.2</ReleaseVersion>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <TargetFramework>netstandard2.1</TargetFramework>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>True</DebugSymbols>
